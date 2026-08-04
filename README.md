@@ -1,16 +1,17 @@
 # x-signal-drafts
 
-Draft-only X automation for people who want to participate thoughtfully without turning their account into a bot.
+X signal alerts and drafts for people who want to participate thoughtfully without turning their account into a bot.
 
-It watches a small set of X accounts, finds new original posts, drafts only replies that add something specific, batches them for review, and can send one grounded original-post idea each day. It never publishes to X.
+It watches a small set of X accounts, finds new original posts, filters out low-signal noise with an OpenAI model, and drafts only substantive replies. It also runs a tiny local web UI so you can review the feed in a browser, or you can run it headless and hand the JSONL output to your coding agent. It never publishes to X.
 
 ## What it does
 
 - Polls the official X recent-search API for original posts from selected accounts.
-- Uses an OpenAI model to reject low-signal posts and draft only substantive replies.
-- Caps reply drafts per run and per day, then sends one review batch rather than an inbox firehose.
+- Uses an OpenAI model to reject low-signal posts and surface only substantive ones.
+- Caps alerts per run and per day, then sends one review batch rather than an inbox firehose.
 - Generates at most one original post per local day from a small JSONL context file you control.
-- Persists state on disk, so restarts do not resend drafts.
+- Serves an optional local feed UI at `http://127.0.0.1:3210` when you run it.
+- Persists state and feed on disk, so restarts do not resend or resurface old alerts.
 
 ## What it deliberately does not do
 
@@ -21,13 +22,19 @@ It watches a small set of X accounts, finds new original posts, drafts only repl
 
 ## Quick start
 
-You need Node 20+, an X API bearer token with recent-search access, and an OpenAI API key. AgentMail is optional; without it, drafts print to stdout.
+You need Node 20+, an X API bearer token with recent-search access, and an OpenAI API key. AgentMail is optional; without it, alerts print to stdout.
 
 ```sh
-git clone https://github.com/YOUR_GITHUB_USER/x-signal-drafts.git
-cd x-signal-drafts
-cp .env.example .env
-cp config.example.json config.json
+npm install -g @puffle/x-signal-drafts
+x-signal-drafts --help
+```
+
+Create your config and env files:
+
+```sh
+x-signal-drafts help                           # show usage
+cp .env.example .env                          # fill in your keys
+cp config.example.json config.json            # replace the example accounts
 mkdir -p data
 ```
 
@@ -36,28 +43,32 @@ Set the required values in `.env`, replace the example accounts in `config.json`
 ```sh
 printf '%s\n' '{"at":"2026-08-04T16:00:00Z","source":"operator note","text":"We learned the review surface matters more than generating another agent run."}' >> data/context.jsonl
 npm test
-npm run reply-scan
-npm run daily-draft
+x-signal-drafts reply-scan
+x-signal-drafts daily-draft
 ```
 
 `reply-scan` and `daily-draft` are safe to rerun: the state file suppresses duplicate delivery. The first run will print instead of email until all three AgentMail variables are set.
 
-## Run it continuously
-
-For a single machine or small server:
+## Run it continuously with the local feed
 
 ```sh
-npm run run
+x-signal-drafts run
 ```
 
-Or with Docker, which keeps only the state and context files mounted outside the container:
+The daemon scans on `config.reply.pollEveryMinutes`, checks the configured local-time minute for the daily post, and serves the feed at `http://127.0.0.1:3210`. Durable state ensures exactly one delivery per day. Use a persistent disk for `data/`.
+
+Or run just the local UI and trigger scans manually:
+
+```sh
+x-signal-drafts serve
+```
+
+You can also run it with Docker, which keeps only the state and context files mounted outside the container:
 
 ```sh
 docker compose up -d --build
 docker compose logs -f
 ```
-
-The daemon scans on `reply.pollEveryMinutes`. It checks the configured local-time minute for the daily post; durable state ensures exactly one delivery per day. Use a persistent disk for `data/`.
 
 ## Configuration
 
@@ -103,7 +114,17 @@ AGENTMAIL_INBOX_ID=you@agentmail.to
 EMAIL_TO=you@example.com
 ```
 
-Keep `.env` and `data/` out of git. The project does not send email if the delivery variables are absent; it writes the drafts to stdout instead.
+Keep `.env` and `data/` out of git. The project does not send email if the delivery variables are absent; it writes the drafts to stdout and the feed to `data/feed.jsonl` instead.
+
+## Local feed API
+
+When `serve` or `run` is active:
+
+- `GET /` — the feed UI.
+- `GET /api/health` — health check.
+- `GET /api/config` — current target list and limits.
+- `GET /api/feed?limit=50&offset=0` — recent alerts.
+- `POST /api/scan` — trigger a scan in the background.
 
 ## API notes
 
@@ -119,4 +140,4 @@ npm test
 npm run check
 ```
 
-No npm dependencies are required. The project uses Node's built-in `fetch`, test runner, and filesystem APIs.
+No npm dependencies are required. The project uses Node's built-in `fetch`, test runner, filesystem APIs, and HTTP server.

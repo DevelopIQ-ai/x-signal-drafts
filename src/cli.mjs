@@ -6,6 +6,8 @@ import { searchRecentPosts } from './lib/x.mjs';
 import { draftDailyPost, draftReply } from './lib/model.mjs';
 import { dailyEmail, deliverOrPrint, replyEmail } from './lib/mail.mjs';
 import { loadContext } from './lib/context.mjs';
+import { appendAlert } from './lib/feed.mjs';
+import { startServer } from './server.mjs';
 
 await loadEnv();
 
@@ -32,8 +34,12 @@ async function replyScan({ now = new Date() } = {}) {
   for (const tweet of candidates) {
     if (drafts.length >= capacity) break;
     const draft = await draftReply(tweet, config.voice);
-    if (draft.shouldReply) drafts.push({ tweet, draft });
-    else state.seenTweetIds[tweet.id] = now.toISOString();
+    if (draft.shouldReply) {
+      drafts.push({ tweet, draft });
+      await appendAlert({ tweet, draft });
+    } else {
+      state.seenTweetIds[tweet.id] = now.toISOString();
+    }
   }
   if (drafts.length) {
     await deliverOrPrint(replyEmail(drafts));
@@ -81,12 +87,28 @@ async function daemon() {
   log('daemon-started', { pollEveryMinutes: config.reply.pollEveryMinutes, timezone: config.daily.timezone });
 }
 
+async function serve() {
+  await startServer({
+    port: process.env.PORT || 3210,
+    onScan: replyScan,
+  });
+}
+
+async function run() {
+  await startServer({
+    port: process.env.PORT || 3210,
+    onScan: replyScan,
+  });
+  await daemon();
+}
+
 const command = process.argv[2] || 'help';
 if (command === 'reply-scan') await replyScan();
 else if (command === 'daily-draft') await dailyDraft({ force: process.argv.includes('--force') });
-else if (command === 'run') await daemon();
+else if (command === 'serve') await serve();
+else if (command === 'run') await run();
 else if (command === 'help' || command === '--help' || command === '-h') {
-  process.stdout.write(`Usage: node src/cli.mjs <reply-scan|daily-draft|run>\n`);
+  process.stdout.write(`Usage: x-signal-drafts <reply-scan|daily-draft|serve|run>\n`);
 } else {
   throw new Error(`Unknown command: ${command}`);
 }
