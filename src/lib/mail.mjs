@@ -1,17 +1,17 @@
 import { required } from './env.mjs';
 
-export function replyEmail(drafts) {
+export function signalEmail(alerts) {
   const text = [
-    'Drafts only. Nothing has been posted to X.',
+    'X signal alerts. Nothing has been posted to X.',
     '',
-    ...drafts.flatMap((item, index) => [
+    ...alerts.flatMap((item, index) => [
       `${index + 1}. @${item.tweet.author.username}: ${item.tweet.url}`,
-      item.draft.draft,
-      `Why: ${item.draft.rationale || 'specific reply to this post'}`,
+      item.tweet.text,
+      item.rationale ? `Why: ${item.rationale}` : '',
       '',
     ]),
   ].join('\n');
-  return { subject: `X reply drafts — ${drafts.length} to review`, text };
+  return { subject: `X signal alerts — ${alerts.length} to review`, text };
 }
 
 export function dailyEmail({ date, draft, evidence }) {

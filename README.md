@@ -1,23 +1,21 @@
 # x-signal-drafts
 
-X signal alerts and drafts for people who want to participate thoughtfully without turning their account into a bot.
+Your own X feed for the accounts you care about.
 
-It watches a small set of X accounts, finds new original posts, filters out low-signal noise with an OpenAI model, and drafts only substantive replies. It also runs a tiny local web UI so you can review the feed in a browser, or you can run it headless and hand the JSONL output to your coding agent. It never publishes to X.
+It watches a small set of X accounts, finds new original posts, filters out low-signal noise with an OpenAI model, and keeps only the tweets worth your attention. It also runs a tiny local web UI that looks and feels like X. You can run it headless and hand the JSONL output to your coding agent. It never publishes to X.
 
 ## What it does
 
 - Polls the official X recent-search API for original posts from selected accounts.
 - Uses an OpenAI model to reject low-signal posts and surface only substantive ones.
-- Caps alerts per run and per day, then sends one review batch rather than an inbox firehose.
-- Generates at most one original post per local day from a small JSONL context file you control.
-- Serves an optional local feed UI at `http://127.0.0.1:3210` when you run it.
-- Persists state and feed on disk, so restarts do not resend or resurface old alerts.
+- Caps signals per run and per day so your feed stays readable.
+- Serves an optional local X-style feed UI at `http://127.0.0.1:3210`.
+- Persists state and feed on disk, so restarts do not resurface old alerts.
 
 ## What it deliberately does not do
 
 - Log into X with cookies or browser automation.
 - Post, like, follow, or reply on your behalf.
-- Invent achievements, metrics, customers, or personal experiences for your daily post.
 - Send your X token, OpenAI key, or email credentials to the model.
 
 ## Quick start
@@ -38,16 +36,14 @@ cp config.example.json config.json            # replace the example accounts
 mkdir -p data
 ```
 
-Set the required values in `.env`, replace the example accounts in `config.json`, then give the daily writer some real evidence:
+Set the required values in `.env` and replace the example accounts in `config.json`:
 
 ```sh
-printf '%s\n' '{"at":"2026-08-04T16:00:00Z","source":"operator note","text":"We learned the review surface matters more than generating another agent run."}' >> data/context.jsonl
 npm test
-x-signal-drafts reply-scan
-x-signal-drafts daily-draft
+x-signal-drafts scan
 ```
 
-`reply-scan` and `daily-draft` are safe to rerun: the state file suppresses duplicate delivery. The first run will print instead of email until all three AgentMail variables are set.
+`scan` is safe to rerun: the state file suppresses duplicate delivery. The first run will print instead of email until all three AgentMail variables are set.
 
 ## Run it continuously with the local feed
 
@@ -55,7 +51,7 @@ x-signal-drafts daily-draft
 x-signal-drafts run
 ```
 
-The daemon scans on `config.reply.pollEveryMinutes`, checks the configured local-time minute for the daily post, and serves the feed at `http://127.0.0.1:3210`. Durable state ensures exactly one delivery per day. Use a persistent disk for `data/`.
+The daemon scans on `config.reply.pollEveryMinutes`, filters posts, and serves the feed at `http://127.0.0.1:3210`. Durable state ensures exactly one delivery per day. Use a persistent disk for `data/`.
 
 Or run just the local UI and trigger scans manually:
 
@@ -92,17 +88,17 @@ docker compose logs -f
 }
 ```
 
-Set `maxDraftsPerDay` low at first. A tight target list and a hard cap are much better than a busy-looking account or an email flood.
+Set `maxDraftsPerDay` low at first. A tight target list and a hard cap are much better than a busy feed or an email flood.
 
-## Daily-post context
+## Daily-post context (optional)
 
-The daily post writer only sees `data/context.jsonl`. Add one factual line per real thing worth saying:
+If you also want the daily original-post writer, give it evidence in `data/context.jsonl`:
 
 ```json
-{"at":"2026-08-04T16:00:00Z","source":"shipping note","text":"We found that a persisted work queue mattered more than another planner prompt."}
+{"at":"2026-08-04T16:00:00Z","source":"operator note","text":"We learned the review surface matters more than generating another agent run."}
 ```
 
-Context older than 14 days is ignored. If there is no fresh evidence, the job fails instead of generating generic founder content.
+Context older than 14 days is ignored. If there is no fresh evidence, the daily job fails instead of generating generic founder content.
 
 ## Email delivery
 
@@ -114,13 +110,13 @@ AGENTMAIL_INBOX_ID=you@agentmail.to
 EMAIL_TO=you@example.com
 ```
 
-Keep `.env` and `data/` out of git. The project does not send email if the delivery variables are absent; it writes the drafts to stdout and the feed to `data/feed.jsonl` instead.
+Keep `.env` and `data/` out of git. The project does not send email if the delivery variables are absent; it writes alerts to stdout and the feed to `data/feed.jsonl` instead.
 
 ## Local feed API
 
 When `serve` or `run` is active:
 
-- `GET /` — the feed UI.
+- `GET /` — the X-style feed UI.
 - `GET /api/health` — health check.
 - `GET /api/config` — current target list and limits.
 - `GET /api/feed?limit=50&offset=0` — recent alerts.
@@ -130,7 +126,7 @@ When `serve` or `run` is active:
 
 - X recent-search access, rate limits, and historical coverage depend on your X API plan. This project uses `GET /2/tweets/search/recent`, not scraping.
 - OpenAI model availability differs by account. Set `OPENAI_MODEL` explicitly instead of relying on a package default.
-- This is a review tool, not an autoposter. If you later add posting, make that a separate explicit approval workflow.
+- This is a review tool, not an autoposter.
 - Requests set `store: false` on the OpenAI Responses API call; review your own provider retention settings before sharing sensitive context.
 
 ## Development

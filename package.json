@@ -1,7 +1,7 @@
 {
   "name": "@puffle/x-signal-drafts",
   "version": "0.1.0",
-  "description": "Local X signal alerts: watch the accounts you care about, skip the shitposts, and review drafts before you post.",
+  "description": "Your own X feed: watch the accounts you care about, skip the shitposts, and review high-signal posts.",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -40,6 +40,7 @@
     "cli"
   ],
   "scripts": {
+    "scan": "node src/cli.mjs scan",
     "reply-scan": "node src/cli.mjs reply-scan",
     "daily-draft": "node src/cli.mjs daily-draft",
     "serve": "node src/cli.mjs serve",

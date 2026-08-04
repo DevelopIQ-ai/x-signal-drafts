@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>x-signal-drafts — Alerts and drafts for the accounts that matter</title>
-  <meta name="description" content="Watch a small set of X accounts, skip the shitposts, and review high-signal drafts before you post. Local-first.">
+  <title>x-signal-drafts — Your own X feed</title>
+  <meta name="description" content="Pick the accounts you care about on X, skip the shitposts, and read a high-signal feed that looks and feels like X. Local-first.">
   <link rel="canonical" href="https://x-signal-drafts.puffle.ai">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -67,8 +67,8 @@
 
     <!-- Hero -->
     <div class="text-center">
-      <h1 class="text-5xl font-semibold tracking-tight text-black sm:text-6xl">Don't miss the signal<br class="hidden sm:block"> on X</h1>
-      <p class="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">Pick the accounts you actually care about. x-signal-drafts watches them, skips the shitposts, and surfaces high-signal tweets with a draft reply you can review.</p>
+      <h1 class="text-5xl font-semibold tracking-tight text-black sm:text-6xl">Your own X feed</h1>
+      <p class="mx-auto mt-5 max-w-xl text-lg text-muted-foreground">Pick the accounts you actually care about. x-signal-drafts watches them, skips the shitposts, and shows the rest in a feed that looks and feels like X.</p>
       <p class="mx-auto mt-3 max-w-xl text-sm text-muted">Free and open source. Runs on your own machine.</p>
 
       <!-- Primary command -->
@@ -97,15 +97,15 @@
         </div>
         <div class="rounded-xl border border-border bg-white p-5 text-left">
           <h3 class="text-sm font-semibold text-black">Shitpost filter built in</h3>
-          <p class="mt-2 text-sm text-muted-foreground">A small model check keeps low-signal posts out of your feed. You only review the ones worth a reply or a reaction.</p>
+          <p class="mt-2 text-sm text-muted-foreground">A small model check keeps low-signal posts out of your feed. You only see the ones worth a reply or a reaction.</p>
+        </div>
+        <div class="rounded-xl border border-border bg-white p-5 text-left">
+          <h3 class="text-sm font-semibold text-black">Looks like X</h3>
+          <p class="mt-2 text-sm text-muted-foreground">Your profile on the left, your feed in the center, and your targets on the right. Familiar columns, no suggested replies.</p>
         </div>
         <div class="rounded-xl border border-border bg-white p-5 text-left">
           <h3 class="text-sm font-semibold text-black">Nothing gets posted</h3>
-          <p class="mt-2 text-sm text-muted-foreground">It drafts, it alerts, it queues. It never logs into X or publishes on your behalf. You approve every reply.</p>
-        </div>
-        <div class="rounded-xl border border-border bg-white p-5 text-left">
-          <h3 class="text-sm font-semibold text-black">Optional local UI</h3>
-          <p class="mt-2 text-sm text-muted-foreground">A feed page runs on your machine if you want it. Or run it headless and pipe alerts to your agent through stdout or email.</p>
+          <p class="mt-2 text-sm text-muted-foreground">It reads, it filters, it queues. It never logs into X or publishes on your behalf. You control every action.</p>
         </div>
       </div>
     </section>
@@ -120,11 +120,11 @@
         </li>
         <li class="flex gap-4 rounded-xl border border-border bg-white p-5 text-left">
           <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black text-xs font-medium text-white">2</span>
-          <p class="text-sm text-muted-foreground"><span class="font-medium text-black">Run it.</span> <code class="rounded border border-border bg-gray-50 px-1 font-mono text-xs">x-signal-drafts run</code> polls X, filters out low-signal posts, and appends alerts to a local feed.</p>
+          <p class="text-sm text-muted-foreground"><span class="font-medium text-black">Run it.</span> <code class="rounded border border-border bg-gray-50 px-1 font-mono text-xs">x-signal-drafts run</code> polls X, filters out low-signal posts, and appends them to a local feed.</p>
         </li>
         <li class="flex gap-4 rounded-xl border border-border bg-white p-5 text-left">
           <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black text-xs font-medium text-white">3</span>
-          <p class="text-sm text-muted-foreground"><span class="font-medium text-black">Review drafts.</span> Open <code class="rounded border border-border bg-gray-50 px-1 font-mono text-xs">http://127.0.0.1:3210</code> to see the feed, or let your agent read the JSONL output and take it from there.</p>
+          <p class="text-sm text-muted-foreground"><span class="font-medium text-black">Read the feed.</span> Open <code class="rounded border border-border bg-gray-50 px-1 font-mono text-xs">http://127.0.0.1:3210</code> to see an X-style feed, or let your agent read the JSONL output directly.</p>
         </li>
       </ol>
     </section>
