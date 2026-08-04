@@ -11,9 +11,10 @@ function parseJson(text) {
 }
 
 async function askJson(instructions, input) {
-  const key = required('OPENAI_API_KEY');
+  const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com').replace(/\/+$/, '');
+  const key = baseUrl === 'https://api.openai.com' ? required('OPENAI_API_KEY') : required('OPENAI_GATEWAY_API_KEY', 'OPENAI_API_KEY');
   const model = required('OPENAI_MODEL');
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch(`${baseUrl}/v1/responses`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
