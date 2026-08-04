@@ -41,6 +41,8 @@ The server reads the feed in `src/lib/feed.mjs` and reverses the JSONL lines, so
 - `GET /api/feed?limit=50` -> `{ alerts: [...] }`
 - `POST /api/scan` -> `202 { "status": "started" }` (background scan will error without X/OpenAI creds, but the server must stay up)
 
+Each signal alert is delivered separately when `AGENTMAIL_*` is configured; otherwise it prints to stdout.
+
 ## Marketing site
 
 Open `file:///path/to/repo/website/index.html` in Chrome. It is a static HTML file using Tailwind CDN.

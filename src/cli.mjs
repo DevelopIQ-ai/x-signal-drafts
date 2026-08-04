@@ -1,6 +1,6 @@
 import { loadEnv } from './lib/env.mjs';
 import { loadConfig } from './lib/config.mjs';
-import { loadState, saveState, zonedDay, canDraftReply, recordReplyBatch } from './lib/state.mjs';
+import { loadState, saveState, zonedDay, canDraftReply, recordSignal } from './lib/state.mjs';
 import { searchRecentPosts } from './lib/x.mjs';
 import { classifyPost, draftDailyPost } from './lib/model.mjs';
 import { dailyEmail, deliverOrPrint, signalEmail } from './lib/mail.mjs';
@@ -29,24 +29,22 @@ async function signalScan({ now = new Date() } = {}) {
   const since = new Date(now.getTime() - config.reply.lookbackMinutes * 60_000);
   const candidates = (await searchRecentPosts(config.targets, { since, maxResults: 10 })).filter((tweet) => !state.seenTweetIds[tweet.id]);
   const capacity = Math.min(config.reply.maxDraftsPerRun, config.reply.maxDraftsPerDay - (state.replyDays[date]?.count || 0));
-  const alerts = [];
+  let alertCount = 0;
   for (const tweet of candidates) {
-    if (alerts.length >= capacity) break;
+    if ((state.replyDays[date]?.count || 0) >= capacity) break;
     const signal = await classifyPost(tweet, config.voice);
     if (signal.isSignal) {
       const alert = { tweet, rationale: signal.rationale };
-      alerts.push(alert);
+      alertCount += 1;
       await appendAlert(alert);
+      await deliverOrPrint(signalEmail(alert));
+      recordSignal(state, { date, tweetId: tweet.id, sentAt: now.toISOString() });
     } else {
       state.seenTweetIds[tweet.id] = now.toISOString();
     }
   }
-  if (alerts.length) {
-    await deliverOrPrint(signalEmail(alerts));
-    recordReplyBatch(state, { date, tweetIds: alerts.map((item) => item.tweet.id), sentAt: now.toISOString() });
-  }
   await saveState(stateFile, state);
-  log('signal-scan-complete', { candidates: candidates.length, alerts: alerts.length, dailyCount: state.replyDays[date]?.count || 0 });
+  log('signal-scan-complete', { candidates: candidates.length, alerts: alertCount, dailyCount: state.replyDays[date]?.count || 0 });
 }
 
 async function dailyDraft({ now = new Date(), force = false } = {}) {

@@ -48,3 +48,7 @@ export function recordReplyBatch(state, { date, tweetIds, sentAt = new Date().to
   state.replyDays[date].sentAt.push(sentAt);
   for (const tweetId of tweetIds) state.seenTweetIds[tweetId] = sentAt;
 }
+
+export function recordSignal(state, { date, tweetId, sentAt = new Date().toISOString() }) {
+  recordReplyBatch(state, { date, tweetIds: [tweetId], sentAt });
+}

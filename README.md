@@ -90,6 +90,8 @@ docker compose logs -f
 
 Set `maxDraftsPerDay` low at first. A tight target list and a hard cap are much better than a busy feed or an email flood.
 
+Each signal alert is delivered as a separate email/message so you get one per relevant tweet (up to the per-day cap).
+
 ## Daily-post context (optional)
 
 If you also want the daily original-post writer, give it evidence in `data/context.jsonl`:
@@ -110,7 +112,7 @@ AGENTMAIL_INBOX_ID=you@agentmail.to
 EMAIL_TO=you@example.com
 ```
 
-Keep `.env` and `data/` out of git. The project does not send email if the delivery variables are absent; it writes alerts to stdout and the feed to `data/feed.jsonl` instead.
+Keep `.env` and `data/` out of git. The project does not send email if the delivery variables are absent; it writes each alert to stdout and the feed to `data/feed.jsonl` instead.
 
 ## Local feed API
 

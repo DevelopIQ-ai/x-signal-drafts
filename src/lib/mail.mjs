@@ -1,17 +1,15 @@
 import { required } from './env.mjs';
 
-export function signalEmail(alerts) {
+export function signalEmail(alert) {
+  const tweet = alert.tweet;
   const text = [
-    'X signal alerts. Nothing has been posted to X.',
+    'X signal alert. Nothing has been posted to X.',
     '',
-    ...alerts.flatMap((item, index) => [
-      `${index + 1}. @${item.tweet.author.username}: ${item.tweet.url}`,
-      item.tweet.text,
-      item.rationale ? `Why: ${item.rationale}` : '',
-      '',
-    ]),
+    `@${tweet.author.username}: ${tweet.url}`,
+    tweet.text,
+    alert.rationale ? `Why it matters: ${alert.rationale}` : '',
   ].join('\n');
-  return { subject: `X signal alerts — ${alerts.length} to review`, text };
+  return { subject: `X signal — @${tweet.author.username} posted`, text };
 }
 
 export function dailyEmail({ date, draft, evidence }) {
