@@ -1,0 +1,12 @@
+services:
+  x-signal-drafts:
+    build: .
+    env_file: .env
+    environment:
+      X_SIGNAL_CONFIG: /app/config.json
+      X_SIGNAL_STATE: /data/state.json
+      X_SIGNAL_CONTEXT: /data/context.jsonl
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./data:/data
+    restart: unless-stopped

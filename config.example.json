@@ -1,0 +1,19 @@
+{
+  "targets": ["swyx", "danshipper", "mitsuhiko"],
+  "reply": {
+    "pollEveryMinutes": 10,
+    "lookbackMinutes": 20,
+    "maxDraftsPerRun": 2,
+    "maxDraftsPerDay": 4
+  },
+  "daily": {
+    "hour": 8,
+    "minute": 15,
+    "timezone": "America/Los_Angeles"
+  },
+  "voice": {
+    "bio": "technical founder building AI products",
+    "style": "lowercase when natural, direct, specific, and conversational",
+    "interests": ["agents", "developer tools", "startups", "AI infrastructure"]
+  }
+}
