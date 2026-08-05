@@ -1,11 +1,12 @@
-import path from 'node:path';
 import { loadEnv } from './lib/env.mjs';
 import { loadConfig } from './lib/config.mjs';
-import { loadState, saveState, zonedDay, canDraftReply, recordReplyBatch } from './lib/state.mjs';
+import { loadState, saveState, zonedDay, canDraftReply, recordSignal } from './lib/state.mjs';
 import { searchRecentPosts } from './lib/x.mjs';
-import { draftDailyPost, draftReply } from './lib/model.mjs';
-import { dailyEmail, deliverOrPrint, replyEmail } from './lib/mail.mjs';
+import { classifyPost, draftDailyPost } from './lib/model.mjs';
+import { dailyEmail, deliverOrPrint, signalEmail } from './lib/mail.mjs';
 import { loadContext } from './lib/context.mjs';
+import { appendAlert } from './lib/feed.mjs';
+import { startServer } from './server.mjs';
 
 await loadEnv();
 
@@ -16,31 +17,34 @@ function log(event, fields = {}) {
   process.stdout.write(`${JSON.stringify({ at: new Date().toISOString(), event, ...fields })}\n`);
 }
 
-async function replyScan({ now = new Date() } = {}) {
+async function signalScan({ now = new Date() } = {}) {
   const config = await loadConfig();
-  if (!config.targets.length) throw new Error('config.targets must contain at least one X handle for reply scanning.');
+  if (!config.targets.length) throw new Error('config.targets must contain at least one X handle for scanning.');
   const state = await loadState(stateFile);
   const date = zonedDay(now, config.daily.timezone);
   if (!canDraftReply(state, { date, maxDraftsPerDay: config.reply.maxDraftsPerDay })) {
-    log('reply-scan-skipped', { reason: 'daily-cap', date, count: state.replyDays[date].count });
+    log('signal-scan-skipped', { reason: 'daily-cap', date, count: state.replyDays[date].count });
     return;
   }
   const since = new Date(now.getTime() - config.reply.lookbackMinutes * 60_000);
   const candidates = (await searchRecentPosts(config.targets, { since, maxResults: 10 })).filter((tweet) => !state.seenTweetIds[tweet.id]);
   const capacity = Math.min(config.reply.maxDraftsPerRun, config.reply.maxDraftsPerDay - (state.replyDays[date]?.count || 0));
-  const drafts = [];
+  let alertCount = 0;
   for (const tweet of candidates) {
-    if (drafts.length >= capacity) break;
-    const draft = await draftReply(tweet, config.voice);
-    if (draft.shouldReply) drafts.push({ tweet, draft });
-    else state.seenTweetIds[tweet.id] = now.toISOString();
-  }
-  if (drafts.length) {
-    await deliverOrPrint(replyEmail(drafts));
-    recordReplyBatch(state, { date, tweetIds: drafts.map((item) => item.tweet.id), sentAt: now.toISOString() });
+    if ((state.replyDays[date]?.count || 0) >= capacity) break;
+    const signal = await classifyPost(tweet, config.voice);
+    if (signal.isSignal) {
+      const alert = { tweet, rationale: signal.rationale };
+      alertCount += 1;
+      await appendAlert(alert);
+      await deliverOrPrint(signalEmail(alert));
+      recordSignal(state, { date, tweetId: tweet.id, sentAt: now.toISOString() });
+    } else {
+      state.seenTweetIds[tweet.id] = now.toISOString();
+    }
   }
   await saveState(stateFile, state);
-  log('reply-scan-complete', { candidates: candidates.length, drafts: drafts.length, dailyCount: state.replyDays[date]?.count || 0 });
+  log('signal-scan-complete', { candidates: candidates.length, alerts: alertCount, dailyCount: state.replyDays[date]?.count || 0 });
 }
 
 async function dailyDraft({ now = new Date(), force = false } = {}) {
@@ -68,7 +72,7 @@ function zonedTime(date, timezone) {
 
 async function daemon() {
   const config = await loadConfig();
-  const runScan = async () => { try { await replyScan(); } catch (error) { log('reply-scan-failed', { error: error.message }); } };
+  const runScan = async () => { try { await signalScan(); } catch (error) { log('signal-scan-failed', { error: error.message }); } };
   const runDaily = async () => {
     const time = zonedTime(new Date(), config.daily.timezone);
     if (time.hour !== config.daily.hour || time.minute !== config.daily.minute) return;
@@ -81,12 +85,28 @@ async function daemon() {
   log('daemon-started', { pollEveryMinutes: config.reply.pollEveryMinutes, timezone: config.daily.timezone });
 }
 
+async function serve() {
+  await startServer({
+    port: process.env.PORT || 3210,
+    onScan: signalScan,
+  });
+}
+
+async function run() {
+  await startServer({
+    port: process.env.PORT || 3210,
+    onScan: signalScan,
+  });
+  await daemon();
+}
+
 const command = process.argv[2] || 'help';
-if (command === 'reply-scan') await replyScan();
+if (command === 'scan' || command === 'reply-scan') await signalScan();
 else if (command === 'daily-draft') await dailyDraft({ force: process.argv.includes('--force') });
-else if (command === 'run') await daemon();
+else if (command === 'serve') await serve();
+else if (command === 'run') await run();
 else if (command === 'help' || command === '--help' || command === '-h') {
-  process.stdout.write(`Usage: node src/cli.mjs <reply-scan|daily-draft|run>\n`);
+  process.stdout.write(`Usage: x-signal-drafts <scan|daily-draft|serve|run>\n`);
 } else {
   throw new Error(`Unknown command: ${command}`);
 }

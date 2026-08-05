@@ -1,18 +1,52 @@
 {
-  "name": "x-signal-drafts",
+  "name": "@puffle/x-signal-drafts",
   "version": "0.1.0",
-  "private": true,
-  "description": "A draft-only X monitor for high-signal replies and daily post ideas.",
+  "description": "Your own X feed: watch the accounts you care about, skip the shitposts, and review high-signal posts.",
   "type": "module",
+  "license": "MIT",
   "engines": {
     "node": ">=20"
   },
+  "bin": {
+    "x-signal-drafts": "src/cli.mjs"
+  },
+  "files": [
+    "src",
+    "website",
+    "config.example.json",
+    ".env.example",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DevelopIQ-ai/x-signal-drafts.git"
+  },
+  "homepage": "https://x-signal-drafts.puffle.ai",
+  "bugs": {
+    "url": "https://github.com/DevelopIQ-ai/x-signal-drafts/issues"
+  },
+  "keywords": [
+    "x",
+    "twitter",
+    "alerts",
+    "signal",
+    "agent",
+    "drafts",
+    "monitor",
+    "cli"
+  ],
   "scripts": {
+    "scan": "node src/cli.mjs scan",
     "reply-scan": "node src/cli.mjs reply-scan",
     "daily-draft": "node src/cli.mjs daily-draft",
+    "serve": "node src/cli.mjs serve",
     "run": "node src/cli.mjs run",
     "test": "node --test",
-    "check": "node --check src/cli.mjs && node --check src/lib/*.mjs"
-  },
-  "license": "MIT"
+    "check": "node --check src/cli.mjs && node --check src/server.mjs && node --check src/lib/*.mjs",
+    "lint": "node --check src/cli.mjs && node --check src/server.mjs && node --check src/lib/*.mjs"
+  }
 }

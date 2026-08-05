@@ -11,9 +11,10 @@ function parseJson(text) {
 }
 
 async function askJson(instructions, input) {
-  const key = required('OPENAI_API_KEY');
+  const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com').replace(/\/+$/, '');
+  const key = baseUrl === 'https://api.openai.com' ? required('OPENAI_API_KEY') : required('OPENAI_GATEWAY_API_KEY', 'OPENAI_API_KEY');
   const model = required('OPENAI_MODEL');
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch(`${baseUrl}/v1/responses`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -30,17 +31,15 @@ async function askJson(instructions, input) {
   return parseJson(extractText(await response.json()));
 }
 
-export async function draftReply(tweet, voice) {
-  const instructions = `You draft replies to X posts for a real person. Return JSON only: {"shouldReply":boolean,"draft":string,"rationale":string}.
+export async function classifyPost(tweet, voice) {
+  const instructions = `You filter X posts for a person who wants a high-signal feed. Return JSON only: {"isSignal":boolean,"rationale":string}.
 
 The person is ${voice.bio}. Their style: ${voice.style}. Interests: ${voice.interests.join(', ') || 'none listed'}.
 
-Only set shouldReply true if the reply adds a specific observation, a causal/non-obvious inference, a disagreement with a reason, a falsifiable question, or post-specific humor. Do not restate the post, say generic agreement, use engagement bait, or manufacture expertise. Skip announcements, memes, low-information posts, and anything the person could not naturally have an opinion on. If replying, write one or two natural sentences under 280 characters. Never claim personal experience not provided.`;
+Set isSignal true only if the post is substantive: a concrete observation, earned opinion, specific insight, falsifiable claim, or post-specific humor the person would genuinely care about. Skip announcements, memes, engagement bait, generic platitudes, outrage bait, and anything the person could not naturally have an opinion on. Do not invent personal experience. Keep rationale under one sentence.`;
   const value = await askJson(instructions, `Author: @${tweet.author.username}\nPost:\n${tweet.text}\nURL: ${tweet.url}`);
-  const draft = String(value.draft || '').trim();
   return {
-    shouldReply: Boolean(value.shouldReply) && draft.length > 0 && draft.length <= 280,
-    draft,
+    isSignal: Boolean(value.isSignal),
     rationale: String(value.rationale || '').trim(),
   };
 }
