@@ -28,7 +28,7 @@ export async function deliverOrPrint(message) {
     process.stdout.write(`\n--- ${message.subject} ---\n${message.text}\n`);
     return { mode: 'stdout' };
   }
-  const response = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inboxId)}/messages`, {
+  const response = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inboxId)}/messages/send`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ to: recipient, subject: message.subject, text: message.text }),
